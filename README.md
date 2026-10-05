@@ -42,44 +42,43 @@ Below is a brief overview of the most common headers found in network traffic:
 
 - The *ICMP* Header (which is designed for Layer 3 - the Network Layer) is a protocol used for IP and transport diagnostics and error reporting. Commonly used by tools like ping and traceroute, it contains fields such as Type and Code to specify the nature of the message. ICMP packets do not carry application data.
 
-- The *UDP* (datagram) or *TCP* (segment) headers (inteded for Layer 4 – the Transport Layer) contains information about how the datagram or segment is transmitted between applications on different hosts. The header is typically processed on the end-hosts only and it contains information about which application on a host is sending or receiving the packet, some protocols like TCP also provide some additional services, like flow control and error checking. TCP offers reliable delivery with congestion control, while UDP is faster but does not guarantee delivery. Some of the key fields in the TCP/UDP header are:
-
-  - *Source port* and *Destination port*: identify which application is sending/receiving the packet
-  - *Sequence number* (TCP only): used for ordering packets
-  - *Flags* (TCP only): control bits for connection management (SYN, ACK, FIN, etc.)
+- The *UDP* (datagram) or *TCP* (segment) headers (inteded for Layer 4 – the Transport Layer) contains information about how the datagram or segment is transmitted between applications on different hosts. The header is typically processed on the end-hosts only and it contains information about which application on a host is sending or receiving the packet, some protocols like TCP also provide some additional services, like flow control and error checking. 
 
 - Application layer (HTTP, DNS, FTP) protocols (Layer 5) typically define dedicated header format to convey per protocol interactions (e.g., request an HTTP objects). Header encoding can use either text-based formats (like HTTP) or binary formats (like DNS) and format widely varies between protocols.
 
-- It is not uncommon for packets to include *optional or special headers* that provide additional functionality. These headers are not part of the core packet structure but are used to support specific network features or services. Examples include VLAN tags for network segmentation, MPLS headers for efficient routing in service provider networks, and IPsec headers for secure communication. **Network devices usually do not inspect this, unless deep packet inspection is enabled.**
+- It is not uncommon for packets to include *optional or special headers* that provide additional functionality. These headers are not part of the core packet structure but are used to support specific network features or services. Examples include VLAN tags for network segmentation, MPLS headers for efficient routing in service provider networks, and IPsec headers for secure communication. **Network devices usually do not inspect these, unless deep packet inspection is enabled.**
 
-To process each of these headers, network devices such as switches and routers use predefined rules to inspect specific fields and make forwarding decisions based on them. Each device needs its own configuration to determine how to handle packets based on the protocols and services it supports, while distributed protocols, such as OSPF and BGP, help routers dynamically learn about the network topology and update their forwarding tables accordingly. These properties were sufficient for network requirements in the early days of the Internet, but as networks have evolved, the need for more flexibility and programmability has become apparent. This is where P4 comes in.
+To process each of these headers, network devices, such as switches and routers, use predefined rules to extract fields and make forwarding decisions based on them. Each device needs its own configuration to determine how to handle packets based on the protocols and services it supports, while distributed protocols, such as OSPF and BGP, help routers to learn the network topology and update their forwarding tables accordingly. This design was sufficient for the early Internet days, but in recent years there is an increasing need for flexibility and programmability. This is where P4 comes in.
 
 ## Why This Matters for P4 & SDN
 
-P4 (Programming Protocol-Independent Packet Processors) is a programming language designed to give developers control over how packets are processed in network devices. It allows you to define how packets are parsed, processed, and forwarded, enabling the creation of custom network functions and behaviours. 
+P4 (Programming Protocol-Independent Packet Processors) is a programming language designed to give developers control over how packets are processed in network devices. It allows you to define how packets are parsed, processed, and forwarded, enabling the creation of custom network functions and behaviours.
 
 Normally, switches and routers are like robots with fixed instructions:
+
 > “I only understand Ethernet, IP, TCP… don’t ask me to do anything else.”
+
 P4 changes that.
 
 With P4, you get to say:
+
 >“Hey switch, this is what a packet looks like, this is how I want you to read it, and this is what I want you to do with it.”
 
-![Figure 1: Seperation of Control and Data Plane in a network.](.resources/sdn-view.png){}
+![Figure 1: Separation of Control and Data Plane in a network.](.resources/sdn-view.png){}
 
 P4 and SDN try built on the idea of separating the control plane (the brain) from the data plane (the muscles) of network devices. The control plane makes decisions about where to send packets, while the data plane actually forwards the packets based on those decisions. SDN allows you to program the control plane using a centralized controller, while P4 allows you to program the data plane using a high-level language. This approach can deliver multiple benefits for operators and developers.
 
-![Figure 2: Seperation of Control and Data Plane in a network.](.resources/control-data-plane-seperation.drawio.png){}
+![Figure 2: Separation of Control and Data Plane in a network.](.resources/control-data-plane-seperation.drawio.png){}
 
-This approach allows a network operator to define custom packet headers, parsing logic, and forwarding behaviour, enabling the creation of new network protocols and services without changing the underlying hardware. If you are a cloud provider which wants to run a new bespoke protocol for your data centre, or a research lab wanting to experiment with new network algorithms, P4 gives you the flexibility to do so, without need expensive hardware upgrades. In parallel, resources on a network device have typically specific limitation, like lookup table sizes or device queues. P4 allows network operators to optimize how to use the resources of a network device based on their specific use case, improving performance and efficiency.
+This approach allows a network operator to define custom packet headers, parsing logic, and forwarding behaviour, enabling the creation of new network protocols and services without changing the underlying hardware. If you are a cloud provider which wants to run a new bespoke protocol for your data centre, or a network researcher wanting to experiment with new network algorithms, P4 gives you the flexibility to do so, without the need for expensive hardware upgrades. In parallel, resources on a network device have typically specific limitation, like lookup table sizes or device queues. P4 allows network operators to optimize how to use the resources of a network device based on their specific use case, improving performance and efficiency.
 
 SDN and P4 offers benefits simplifies network management. During the SCC.231 you had the experience configuring a network consisting of multiple OSPF routers. This process can be complex and error-prone, especially in large networks. P4 offers the ability to centrally manage and configure network devices using a controller, simplifying network management and reducing the risk of misconfiguration. Instead of writting individual configurations for each device, you can define high-level policies and rules, which a software controller can transalate automatically into configuration for each device.
 
-In todays tutorial, we will explore how we can use P4 to program a simple switch for our home network. We will start by replacing the Linux switch in our home network topology with a P4 switch, and then we will build a simple P4 program that makes the switch act as a hub (a Layer 2 network device that floods packets to all ports but the one received on). Along the way, we will learn about the key concepts of P4 programming, including header definitions, parsing, and control blocks. 
+In todays tutorial, we will explore how we can use P4 to program a simple switch for our home network. We will start by replacing the Linux switch in our home network topology with a P4 switch, and then we will build a simple P4 program that makes the switch act as a hub (a Layer 2 network device that floods packets to all ports but the one received on). Along the way, we will learn about the key concepts of P4 programming, including header definitions, parsing, and control blocks.
 
-## Task 0: Starting your 333 devcontainer environment
+## Task 0: Starting your SCCM6310/SCCM7310 devcontainer environment
 
-> In order to run wireshark and GUI applications from within a Docker container on your local machine, you will need to disable the X11 access control on your host machine. You can do this by running the command `xhost +` on a terminal on your host machine (open the terminal application on the lab machnine, **not** inside the container, or on the mininet prompt). 
+> In order to run wireshark and GUI applications from within a Docker container on your local machine, you will need to disable the X11 access control on your host machine. You can do this by running the command `xhost +` on a terminal on your host machine (open the terminal application on the lab machnine, **not** inside the container, or on the mininet prompt).
 
 To simplify lab coding, we use a technology called containerisation to package everything you need to run our lab activities in a pre-configured environment. You might have heard of Docker containers, which are lightweight, portable, and consistent virtual instances that can run applications and services.
 
@@ -266,7 +265,7 @@ struct standard_metadata_t {
 - `bmv2.json`: This file contains the compiled P4 program in JSON format, which is used by the Stratum software switch to configure the P4 pipeline.
 - `p4info.txt`: This file contains details that can be used by the P4 Runtime controller to interact with the P4 program running in the switch. This is something that we will explore in more detail in future exercises.
 
-When you run the command `make start`, the Makefile will automatically compile the P4 program and load it into the Stratum software switch. You can check the switch's logs to see if the P4 program loaded successfully. If everything went well, you should see a message like this in the logs: `I0106 11:32:50.123456    88 p4_pipeline_builder.cc:123] P4 pipeline successfully loaded`. Furthermore, you can use the small `send_receive.py` script located in the `mininet/` folder (inside the `mn-stratum` container this is directory is mounted a `/mininet/`) to test the functionality of the switch. This script sends a packet from a host to the switch and waits for a copy of the packet. If you connect to the mininet CLI using the command `make mn-cli` and run the command `mininet> homePC python3 /mininet/send_receive.py 192.168.0.5`, you should see that the packet is sent from the phone host to the switch and read the following output (**The message should appear twice. If the P4 program is not loaded correctly, then you will see the message only once, for the outgoing packet.**):
+When you run the command `make start`, the Makefile will automatically compile the P4 program and load it into the Stratum software switch. You can check the switch's logs to see if the P4 program loaded successfully. If everything went well, you should see a message like this in the logs: `I0106 11:32:50.123456    88 p4_pipeline_builder.cc:123] P4 pipeline successfully loaded`. Furthermore, you can use the small `send_receive.py` script located in the `mininet/` folder to test the functionality of the switch. This script sends a packet from a host to the switch and waits for a copy of the packet. If you connect to the mininet CLI using the command `make mn-cli` and run the command `mininet> homePC python3 /mininet/send_receive.py 192.168.0.5`, you should see that the packet is sent from the phone host to the switch and read the following output (**The message should appear twice. If the P4 program is not loaded correctly, then you will see the message only once, for the outgoing packet.**):
 
 ```
 [!] A packet was reflected from the switch:
@@ -306,7 +305,7 @@ struct headers {
 }
 ```
 
-This code block defines the Ethernet header structure with the destination MAC address, source MAC address, and EtherType fields. The `macAddr_t` type is defined as a 48-bit bitvector to represent MAC addresses, which are 6 bytes long. typedef are a common way in P4 to define new types based on existing ones and improve code readability. Furthermore, we update the `headers` struct to include the newly defined `ethernet_t` header. In future programs, you can define more headers and add them to the `headers` struct as needed to parse additional protocol headers.
+This code block defines the Ethernet header structure with the destination MAC address, source MAC address, and EtherType fields. The `macAddr_t` type is defined as a 48-bit bitvector to represent MAC addresses, which are 6 bytes long. `typedef` is a common way in P4 to define new types based on existing ones and improve code readability. Furthermore, we update the `headers` struct to include the newly defined `ethernet_t` header. In future programs, you can define more headers and add them to the `headers` struct as needed to parse additional protocol headers.
 
 To parse the Ethernet header from incoming packets, we need to update the `MyParser` block. You will need to add a new state to the parser that extracts the Ethernet header from the packet. You can do this by adding the following code to the `MyParser` block:
 
@@ -316,10 +315,10 @@ parser MyParser(packet_in packet,
                 inout metadata meta,
                 inout standard_metadata_t standard_metadata) {
 
-      state start{
-  	  packet.extract(hdr.ethernet);
-          transition accept;
-      }
+    state start{
+	  packet.extract(hdr.ethernet);
+        transition accept;
+    }
 
 }
 ```
@@ -329,14 +328,13 @@ This code block updates the `MyParser` block to extract the Ethernet header from
 Parsing in P4 is performed [using a state machine](https://p4.org/wp-content/uploads/sites/53/2024/10/P4-16-spec-v1.2.5.pdf#page=104.63), where each state corresponds to a specific parsing step. In this case, we have a single state called `start`, which extracts the Ethernet header and then transitions to the `accept` state. You can add more states to the parser to extract additional headers as needed. Let's consider a **hypothetical**, more complex example of a P4 program processing IPv4 and IPv6 packets. In this case, you will need to extract the IP header using a different header structure, depending on the Ethernet header's ethType value. You should add two new states that extract the different IP headers after the Ethernet header has been parsed, while the start logic would transition to that new state instead of directly to accept, based on the `etherType` field of the Ethernet header. For example: 
 
 ```C
-      state start{
-  	  packet.extract(hdr.ethernet);
-          transition select(hdr.ethernet.etherType) {
-              0x0800: parse_ipv4;
-              0x86DD: parse_ipv6;
-              default: accept;
-          }
-      }
+    state start{
+	  packet.extract(hdr.ethernet);
+        transition select(hdr.ethernet.etherType) {
+            0x0800: parse_ipv4;
+            0x86DD: parse_ipv6;
+            default: accept;
+        }
 
         state parse_ipv4 {
             packet.extract(hdr.ipv4);
@@ -346,7 +344,8 @@ Parsing in P4 is performed [using a state machine](https://p4.org/wp-content/upl
         state parse_ipv6 {
             packet.extract(hdr.ipv6);
             transition accept;
-        }}
+        }
+    }
 ```
 
 ### Approach 1: Packet Switching using Conditional Statements

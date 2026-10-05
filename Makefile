@@ -49,9 +49,14 @@ mn-cli:
 	$(info *** Attaching to Mininet CLI...)
 	$(info *** To detach press Ctrl-D (Mininet will keep running))
 	-@docker attach --detach-keys "ctrl-d" $(shell docker compose ps -q mininet) || echo "*** Detached from Mininet CLI"
+	
+p4-cli:
+	$(info *** Attaching to P4 CLI...)
+	$(info *** To detach press Ctrl-D (P4 CLI will keep running))
+	docker run -ti p4lang/p4runtime-sh --grpc-addr 172.18.0.2:50001 --device-id 1 --election-id 0,1
 
 mn-log:
-	docker logs -f mininet
+	docker logs -f mininet 
 
 p4-build: p4src/main.p4
 	$(info *** Building P4 program...)
