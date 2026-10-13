@@ -389,7 +389,7 @@ The match-action table is typically used in the ingress (`MyIngress`) and the eg
 A table definition in P4 is defined using the `table` keyword and contains the table `name`, the table `key`, used to lookup entries, and a list of `actions`, ehich can be used by table entries. Furthermore, a table definition can contain a `size`, to define the maximum number of entries, a `default_action`, which will be applied if no entries match, and a match type, which include the options `exact`, `lpm` (longest-match prefix) and `ternary`. Actions resemble functions in C and can take parameters and contain code blocks that define the action logic. The example table definition below defines an IPv4 longest-prefix match table, which matches the destination IP address of incoming packets and forwards them to the appropriate output port. If no entries match, the default action is to drop the packet. Furthermore, an action called `ipv4_forward` is defined, which takes two parameters: the output port and the destination MAC address. The action sets the `egress_spec` field of the `standard_metadata` struct and updates the destination MAC address of the Ethernet header.
 
 ```C
-action forward(in bit<9> p, bit<48> d) {
+action forward(bit<9> p, bit<48> d) {
     standard_metadata.egress_spec = p;
     headers.ethernet.dstAddr =d;
 }
